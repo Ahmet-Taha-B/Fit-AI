@@ -8,9 +8,6 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import HumanMessage, AIMessage
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 st.set_page_config(
     page_title="Fitness AI Coach",
@@ -45,6 +42,21 @@ st.markdown("<p style='text-align: center; color: rgba(255,255,255,0.8);'>Kişis
 st.markdown("---")
 
 with st.sidebar:
+    st.header("🔑 API Ayarları")
+    groq_api_key = st.text_input(
+        "Groq API Key",
+        type="password",
+        placeholder="gsk_...",
+        help="Groq API anahtarınızı girin (https://console.groq.com/keys)"
+    )
+    
+    if not groq_api_key:
+        st.warning("⚠️ Lütfen API anahtarınızı girin!")
+    else:
+        st.success("✅ API anahtarı girildi!")
+    
+    st.markdown("---")
+    
     st.header("🎯 Özellikler")
     st.info("""
     ✅ Kişiselleştirilmiş fitness tavsiyeleri
@@ -102,8 +114,10 @@ def load_vectorstore():
             st.error(f"❌ Vector store hatası: {e}")
             return None
 
-@st.cache_resource(show_spinner=False)
-def create_agent():
+def create_agent(api_key):
+    if not api_key:
+        return None
+        
     vectorstore = load_vectorstore()
     if not vectorstore:
         return None
@@ -120,7 +134,7 @@ def create_agent():
     
     llm = ChatGroq(
         model="openai/gpt-oss-120b",
-        groq_api_key=os.getenv("GROQ_API_KEY"),
+        groq_api_key=api_key,
         temperature=0.3
     )
     
@@ -143,6 +157,19 @@ KURALLAR:
     )
     
     return agent
+
+# Ana uygulama alanı - API key kontrolü
+if not groq_api_key:
+    st.error("🔑 Lütfen yan menüden Groq API anahtarınızı girin!")
+    st.info("""
+    **Groq API Anahtarı Nasıl Alınır?**
+    
+    1. [Groq Console](https://console.groq.com/keys) adresine gidin
+    2. Hesap oluşturun veya giriş yapın
+    3. "API Keys" bölümünden yeni anahtar oluşturun
+    4. Anahtarı kopyalayıp yan menüdeki alana yapıştırın
+    """)
+    st.stop()
 
 st.subheader("💡 Örnek Sorular")
 col1, col2 = st.columns(2)
@@ -176,7 +203,7 @@ if hasattr(st.session_state, 'example_clicked'):
     
     with st.chat_message("assistant"):
         with st.spinner("💭 Düşünüyorum..."):
-            agent = create_agent()
+            agent = create_agent(groq_api_key)
             if agent:
                 try:
                     config = {"configurable": {"thread_id": st.session_state.thread_id}}
@@ -218,7 +245,7 @@ if prompt := st.chat_input("💬 Fitness hakkında bir soru sorun..."):
     
     with st.chat_message("assistant"):
         with st.spinner("💭 Düşünüyorum..."):
-            agent = create_agent()
+            agent = create_agent(groq_api_key)
             if agent:
                 try:
                     config = {"configurable": {"thread_id": st.session_state.thread_id}}
