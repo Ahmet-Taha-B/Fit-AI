@@ -157,11 +157,9 @@ st.set_page_config(
     layout="wide"
 )
 
-# Dil seçimi kontrolü
 if "language" not in st.session_state:
     st.session_state.language = None
 
-# Eğer dil seçilmemişse, dil seçim ekranını göster
 if st.session_state.language is None:
     st.markdown("""
         <style>
@@ -182,7 +180,6 @@ if st.session_state.language is None:
     
     st.markdown("<h2 style='text-align: center; color: white; margin-bottom: 50px;'>🌐 Please select your language / Lütfen dilinizi seçin</h2>", unsafe_allow_html=True)
     
-    # Dil seçim butonları
     col_space1, col1, col_space2, col2, col_space3 = st.columns([1, 2, 0.5, 2, 1])
     
     with col1:
@@ -197,7 +194,6 @@ if st.session_state.language is None:
     
     st.stop()
 
-# Aktif dil
 lang = st.session_state.language
 t = TRANSLATIONS[lang]
 
@@ -226,7 +222,6 @@ st.markdown("""
 st.markdown(f"<h1 style='text-align: center; color: white;'>💪 {t['page_title']}</h1>", unsafe_allow_html=True)
 st.markdown(f"<p style='text-align: center; color: rgba(255,255,255,0.8);'>{t['page_subtitle']}</p>", unsafe_allow_html=True)
 
-# Dil değiştirme butonları ortada
 col1, col2, col3, col4, col5 = st.columns([2, 0.5, 0.3, 0.5, 2])
 with col2:
     if st.button("🇹🇷", key="change_turkish", use_container_width=True, help="Türkçe"):
@@ -255,7 +250,6 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # İstatistikler üstte
     st.header(t["stats"])
     if "messages" in st.session_state:
         col1, col2 = st.columns(2)
@@ -267,14 +261,13 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # Sohbeti temizle butonu altta
+
     if st.button(t["clear_chat"], use_container_width=True):
         st.session_state.messages = []
         st.rerun()
     
     st.markdown("---")
     
-    # Özellikler en altta
     st.header(t["features"])
     st.info(t["features_list"])
     
@@ -344,7 +337,6 @@ def create_agent(api_key):
     
     return agent
 
-# Ana uygulama alanı - API key kontrolü
 if not groq_api_key:
     st.error(t["api_error"])
     st.info(t["api_info"])
