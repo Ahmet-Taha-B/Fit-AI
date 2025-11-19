@@ -7,6 +7,7 @@ TRANSLATIONS = {
         "api_key_help": "Groq API anahtarınızı girin (https://console.groq.com/keys)",
         "api_warning": "⚠️ Lütfen API anahtarınızı girin!",
         "api_success": "✅ API anahtarı girildi!",
+        "get_api_key_link": "👉 [Groq API Anahtarı Al](https://console.groq.com/keys)",
         "features": "🎯 Özellikler",
         "features_list": """
     ✅ Kişiselleştirilmiş fitness tavsiyeleri
@@ -76,6 +77,7 @@ gibi takip soruları anlıyorum! 🎯""",
         "api_key_help": "Enter your Groq API key (https://console.groq.com/keys)",
         "api_warning": "⚠️ Please enter your API key!",
         "api_success": "✅ API key entered!",
+        "get_api_key_link": "👉 [Get Groq API Key](https://console.groq.com/keys)",
         "features": "🎯 Features",
         "features_list": """
     ✅ Personalized fitness advice

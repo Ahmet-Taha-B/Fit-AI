@@ -62,26 +62,6 @@ with col2:
 with col4:
     if st.button("🇬🇧", key="change_english", use_container_width=True, help="English"):
         st.session_state.language = "en"
-        st.rerun()
-
-st.markdown("---")
-
-with st.sidebar:
-    st.header(t["api_settings"])
-    groq_api_key = st.text_input(
-        t["api_key_label"],
-        value=os.getenv("GROQ_API_KEY", ""),
-        type="password",
-        placeholder="gsk_...",
-        help=t["api_key_help"]
-    )
-    
-    if not groq_api_key:
-        st.warning(t["api_warning"])
-    else:
-        st.success(t["api_success"])
-    
-    st.markdown("---")
     
     st.header(t["stats"])
     if "messages" in st.session_state:
