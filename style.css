@@ -11,6 +11,13 @@ html, body, [class*="css"] {
     background-attachment: fixed;
 }
 
+/* Streamlit Header/Toolbar */
+header[data-testid="stHeader"] {
+    background-color: transparent !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+}
+
 /* Sidebar Styling */
 [data-testid="stSidebar"] {
     background-color: rgba(255, 255, 255, 0.05);
