@@ -1,0 +1,151 @@
+/* Global Settings */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Main Background */
+.stApp {
+    background: linear-gradient(135deg, #1a1c2c 0%, #4a192c 100%);
+    background-attachment: fixed;
+}
+
+/* Sidebar Styling */
+[data-testid="stSidebar"] {
+    background-color: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+    color: #ffffff !important;
+}
+
+/* Button Styling */
+.stButton > button {
+    width: 100%;
+    border-radius: 12px;
+    height: 3.5em;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.stButton > button:hover {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.stButton > button:active {
+    transform: translateY(0);
+}
+
+/* Primary Button (Language Selection) */
+button[kind="primary"] {
+    background: linear-gradient(135deg, #FF4B2B 0%, #FF416C 100%) !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(255, 75, 43, 0.4);
+}
+
+button[kind="primary"]:hover {
+    box-shadow: 0 6px 20px rgba(255, 75, 43, 0.6);
+}
+
+/* Chat Input Styling */
+.stChatInputContainer {
+    padding-bottom: 20px;
+}
+
+[data-testid="stBottom"] {
+    background-color: transparent !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+}
+
+[data-testid="stBottom"] > div {
+    background-color: transparent !important;
+    background: transparent !important;
+}
+
+.stChatInputContainer textarea {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 15px !important;
+}
+
+.stChatInputContainer textarea:focus {
+    border-color: #FF416C !important;
+    box-shadow: 0 0 0 2px rgba(255, 65, 108, 0.3) !important;
+}
+
+/* Chat Messages */
+[data-testid="stChatMessage"] {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-testid="stChatMessage"][data-test-user-name="user"] {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-right: 3px solid #FF416C;
+}
+
+[data-testid="stChatMessage"][data-test-user-name="assistant"] {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-left: 3px solid #4B79A1;
+}
+
+/* Headers and Text */
+h1, h2, h3, p, li {
+    color: #ffffff;
+}
+
+h1 {
+    font-weight: 800;
+    color: white !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Metrics/Stats */
+[data-testid="stMetricValue"] {
+    color: #FF416C !important;
+    font-size: 2rem !important;
+}
+
+[data-testid="stMetricLabel"] {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Info/Warning/Success Boxes */
+.stAlert {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 10px !important;
+    backdrop-filter: blur(5px);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .stButton > button {
+        height: 3em;
+        font-size: 16px;
+    }
+    
+    h1 {
+        font-size: 2rem !important;
+    }
+    
+    [data-testid="stSidebar"] {
+        background-color: #1a1c2c; /* Solid background for better performance on mobile */
+    }
+}
