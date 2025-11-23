@@ -11,7 +11,7 @@ from langchain_core.vectorstores import VectorStoreRetriever
 import os
 from dotenv import load_dotenv
 from translations import TRANSLATIONS
-from typing import Optional
+from typing import Optional, Any
 
 load_dotenv()
 
@@ -151,7 +151,7 @@ def load_vectorstore() -> Optional[Chroma]:
             return None
 
 @st.cache_resource(show_spinner=False)
-def create_agent(api_key: str, system_prompt: str) -> Optional[any]:
+def create_agent(api_key: str, system_prompt: str) -> Optional[Any]:
     if not api_key:
         return None
         
