@@ -7,11 +7,9 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import HumanMessage, AIMessage
-from langchain_core.vectorstores import VectorStoreRetriever
 import os
 from dotenv import load_dotenv
 from translations import TRANSLATIONS
-from typing import Optional, Any
 
 load_dotenv()
 
@@ -123,7 +121,7 @@ with st.sidebar:
     st.caption(t["powered_by"])
 
 @st.cache_resource(show_spinner=False)
-def load_vectorstore() -> Optional[Chroma]:
+def load_vectorstore():
     with st.spinner(t["loading_kb"]):
         try:
             loader = PyPDFDirectoryLoader("data/fitness_pdfs/")
@@ -151,7 +149,7 @@ def load_vectorstore() -> Optional[Chroma]:
             return None
 
 @st.cache_resource(show_spinner=False)
-def create_agent(api_key: str, system_prompt: str) -> Optional[Any]:
+def create_agent(api_key, system_prompt):
     if not api_key:
         return None
         
@@ -161,7 +159,7 @@ def create_agent(api_key: str, system_prompt: str) -> Optional[Any]:
     
     from langchain_core.tools import create_retriever_tool
     
-    retriever: VectorStoreRetriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
     
     retriever_tool = create_retriever_tool(
         retriever,
