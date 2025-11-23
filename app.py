@@ -19,50 +19,46 @@ st.set_page_config(
     layout="wide"
 )
 
-def load_css():
-    with open("style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-load_css()
-
+# Initialize session state for language if not exists
 if "language" not in st.session_state:
     st.session_state.language = None
 
+def load_custom_css():
+    try:
+        with open("style.css") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
+
+load_custom_css()
+
+# Language Selection Logic
 if st.session_state.language is None:
-    st.markdown("<h1 style='text-align: center; margin-top: 60px;'>💪 Fitness AI Coach</h1>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center; color: rgba(255,255,255,0.9); margin-bottom: 40px;'>Welcome! / Hoş Geldiniz!</h3>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>Fitness AI Coach 💪</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: rgba(255,255,255,0.7);'>Please select your language / Lütfen dilinizi seçin</p>", unsafe_allow_html=True)
     
-    st.markdown("<h2 style='text-align: center; margin-bottom: 50px;'>🌐 Please select your language / Lütfen dilinizi seçin</h2>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 50px;'></div>", unsafe_allow_html=True)
     
-    col_space1, col1, col_space2, col2, col_space3 = st.columns([1, 2, 0.5, 2, 1])
-    
-    with col1:
-        if st.button("🇹🇷\n\nTÜRKÇE", key="select_turkish", use_container_width=True, type="primary"):
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🇹🇷 TÜRKÇE", key="select_tr", use_container_width=True):
             st.session_state.language = "tr"
             st.rerun()
+            
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         
-    with col2:
-        if st.button("🇬🇧\n\nENGLISH", key="select_english", use_container_width=True, type="primary"):
+        if st.button("🇬🇧 ENGLISH", key="select_en", use_container_width=True):
             st.session_state.language = "en"
             st.rerun()
-    
+            
+    st.markdown("---")
+    st.caption("Powered by Fitness AI Coach")
     st.stop()
 
-lang = st.session_state.language
-t = TRANSLATIONS[lang]
+t = TRANSLATIONS[st.session_state.language]
 
-st.markdown(f"<h1 style='text-align: center;'>💪 {t['page_title']}</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align: center; color: rgba(255,255,255,0.8);'>{t['page_subtitle']}</p>", unsafe_allow_html=True)
-
-col1, col2, col3, col4, col5 = st.columns([2, 0.5, 0.3, 0.5, 2])
-with col2:
-    if st.button("🇹🇷", key="change_turkish", use_container_width=True, help="Türkçe"):
-        st.session_state.language = "tr"
-        st.rerun()
-with col4:
-    if st.button("🇬🇧", key="change_english", use_container_width=True, help="English"):
-        st.session_state.language = "en"
-        st.rerun()
+# Header
+st.markdown("<h1 style='text-align: center; margin: 0; padding: 0;'>Fitness AI Coach 💪</h1>", unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -98,6 +94,23 @@ with st.sidebar:
     if st.button(t["clear_chat"], use_container_width=True):
         st.session_state.messages = []
         st.rerun()
+    
+    st.markdown("---")
+
+    # Language Switcher (Expandable)
+    with st.expander("🌐 Language / Dil"):
+        lang_options = {"tr": "🇹🇷 Türkçe", "en": "🇬🇧 English"}
+        selected_lang = st.radio(
+            "Select Language / Dil Seçin",
+            options=list(lang_options.keys()),
+            format_func=lambda x: lang_options[x],
+            index=0 if st.session_state.language == "tr" else 1,
+            key="sidebar_lang_select"
+        )
+        
+        if selected_lang != st.session_state.language:
+            st.session_state.language = selected_lang
+            st.rerun()
     
     st.markdown("---")
     
@@ -219,7 +232,7 @@ if hasattr(st.session_state, 'example_clicked'):
                     response = result["messages"][-1].content
                     st.markdown(response)
                 except Exception as e:
-                    response = f"❌ {lang.upper()}: {str(e)}"
+                    response = f"❌ {st.session_state.language.upper()}: {str(e)}"
                     st.error(response)
             else:
                 response = t["agent_error"]
@@ -254,7 +267,7 @@ if prompt := st.chat_input(t["chat_placeholder"]):
                     response = result["messages"][-1].content
                     st.markdown(response)
                 except Exception as e:
-                    response = f"❌ {lang.upper()}: {str(e)}"
+                    response = f"❌ {st.session_state.language.upper()}: {str(e)}"
                     st.error(response)
             else:
                 response = t["agent_error"]
