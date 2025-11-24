@@ -170,7 +170,7 @@ def create_agent(api_key, system_prompt):
     llm = ChatGroq(
         model="openai/gpt-oss-120b",
         groq_api_key=api_key,
-        temperature=0.3
+        temperature=0.5
     )
     
     memory = MemorySaver()
