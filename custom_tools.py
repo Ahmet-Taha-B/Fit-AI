@@ -11,9 +11,9 @@ from langchain_core.prompts import (
     aformat_document,
     format_document,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.tools import Tool
+from pydantic import BaseModel, Field
 
 
 class RetrieverInput(BaseModel):
