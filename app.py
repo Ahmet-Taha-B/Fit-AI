@@ -157,7 +157,7 @@ def create_agent(api_key, system_prompt):
     if not vectorstore:
         return None
     
-    from langchain_core.tools import create_retriever_tool
+    from custom_tools import create_retriever_tool
     
     retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
     
