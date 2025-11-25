@@ -133,7 +133,7 @@ def load_vectorstore():
             
             if not documents:
                 st.warning(t["no_pdfs"])
-                return None
+                return None, 0
             
             text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=1000,
@@ -146,20 +146,24 @@ def load_vectorstore():
             )
             vectorstore = Chroma.from_documents(texts, embeddings)
             
-            st.success(t["pdfs_loaded"].format(count=len(documents)))
-            return vectorstore
+            # st.success removed from here to prevent caching issue with language
+            return vectorstore, len(documents)
         except Exception as e:
             st.error(t["vectorstore_error"].format(error=e))
-            return None
+            return None, 0
 
 @st.cache_resource(show_spinner=False)
 def create_agent(api_key, system_prompt, temperature=0.5):
     if not api_key:
         return None
         
-    vectorstore = load_vectorstore()
+    vectorstore, doc_count = load_vectorstore()
     if not vectorstore:
         return None
+    
+    # Display success message here. Since create_agent re-runs when system_prompt changes 
+    # (which happens when language changes), this ensures the message is in the correct language.
+    st.success(t["pdfs_loaded"].format(count=doc_count))
     
     from custom_tools import create_retriever_tool
     
