@@ -29,7 +29,7 @@ TRANSLATIONS = {
         "system_prompt": """Sen profesyonel bir fitness koçu ve beslenme uzmanısın.
 
 KURALLAR:
-- Kısa ve öz cevapla (max 150 kelime)
+- Kısa ve öz cevapla
 - Yoga, meditasyon veya ruhani pratiklerden BAHSETME
 - Sadece klasik fitness egzersizleri öner (şınav, dambıl, squat, vb.)
 - ÖNCEKİ KONUŞMAYI HATIRLA ve takip sorularını akıllıca yanıtla
@@ -67,7 +67,25 @@ gibi takip soruları anlıyorum! 🎯""",
         "chat_placeholder": "💬 Fitness hakkında bir soru sorun...",
         "language": "🌐 Dil / Language",
         "select_language": "Lütfen dilinizi seçin",
-        "welcome_title": "Hoş Geldiniz! 💪"
+        "welcome_title": "Hoş Geldiniz! 💪",
+        "style_label": "Cevap Tarzı",
+        "style_concise": "Kısa ve Öz",
+        "style_normal": "Normal",
+        "style_creative": "Yaratıcı",
+        "style_custom": "Özel (Custom)",
+        "custom_style_title": "Özel Stil Ayarları",
+        "custom_style_name": "Stil Adı",
+        "custom_style_prompt": "Ek Talimat (Prompt)",
+        "custom_style_temp": "Yaratıcılık (Temperature)",
+        "save": "Kaydet",
+        "edit_custom_style": "Özel Stili Düzenle",
+        "style_reasoning": "Mantık Yürütme",
+        "thinking_process": "Düşünme Süreci",
+        "thinking_process_streaming": "🧠 Düşünme Süreci...",
+        "thinking_complete": "✅ Düşünme Tamamlandı!",
+        "reasoning_streaming": "🤔 Mantık Yürütülüyor...",
+        "consulting_tool": "🛠️ **Düşünülüyor:** Bilgi bulmak için `{tool_name}` kullanılıyor...",
+        "consulting_tool_status": "🤔 {tool_name} Danışılıyor..."
     },
     "en": {
         "page_title": "Fitness AI Coach",
@@ -99,7 +117,7 @@ gibi takip soruları anlıyorum! 🎯""",
         "system_prompt": """You are a professional fitness coach and nutrition expert.
 
 RULES:
-- Keep answers short and concise (max 150 words)
+- Keep answers short and concise
 - DO NOT mention yoga, meditation or spiritual practices
 - Only suggest classic fitness exercises (push-ups, dumbbells, squats, etc.)
 - REMEMBER PREVIOUS CONVERSATION and answer follow-up questions intelligently
@@ -137,6 +155,24 @@ I understand follow-up questions like these! 🎯""",
         "chat_placeholder": "💬 Ask a fitness question...",
         "language": "🌐 Language / Dil",
         "select_language": "Please select your language",
-        "welcome_title": "Welcome! 💪"
+        "welcome_title": "Welcome! 💪",
+        "style_label": "Response Style",
+        "style_concise": "Concise",
+        "style_normal": "Normal",
+        "style_creative": "Creative",
+        "style_custom": "Custom",
+        "custom_style_title": "Custom Style Settings",
+        "custom_style_name": "Style Name",
+        "custom_style_prompt": "Extra Instruction (Prompt)",
+        "custom_style_temp": "Creativity (Temperature)",
+        "save": "Save",
+        "edit_custom_style": "Edit Custom Style",
+        "style_reasoning": "Reasoning",
+        "thinking_process": "Thinking Process",
+        "thinking_process_streaming": "🧠 Thinking Process...",
+        "thinking_complete": "✅ Thinking Complete!",
+        "reasoning_streaming": "🤔 Reasoning...",
+        "consulting_tool": "🛠️ **Thinking:** Deciding to use `{tool_name}` to find information...",
+        "consulting_tool_status": "🤔 Consulting {tool_name}..."
     }
 }

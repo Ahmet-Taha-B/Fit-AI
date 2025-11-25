@@ -1,27 +1,31 @@
 import streamlit as st
-from langchain_groq import ChatGroq
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
+import os
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_groq import ChatGroq
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.prebuilt import create_react_agent
-from langchain_core.messages import HumanMessage, AIMessage
-import os
+from langgraph.graph import StateGraph, START, END, MessagesState
+from langgraph.prebuilt import ToolNode
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from dotenv import load_dotenv
 from translations import TRANSLATIONS
 
 load_dotenv()
 
+# --- Configuration and Initialization ---
+# Set page config
 st.set_page_config(
     page_title="Fitness AI Coach",
     page_icon="💪",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# Initialize session state for language if not exists
+# Initialize session state variables
 if "language" not in st.session_state:
-    st.session_state.language = None
+    st.session_state.language = None # Default to None to show selection screen
 
 def load_custom_css():
     try:
@@ -149,7 +153,7 @@ def load_vectorstore():
             return None
 
 @st.cache_resource(show_spinner=False)
-def create_agent(api_key, system_prompt):
+def create_agent(api_key, system_prompt, temperature=0.5):
     if not api_key:
         return None
         
@@ -170,17 +174,50 @@ def create_agent(api_key, system_prompt):
     llm = ChatGroq(
         model="openai/gpt-oss-120b",
         groq_api_key=api_key,
-        temperature=0.5
+        temperature=temperature
     )
     
     memory = MemorySaver()
     
-    agent = create_react_agent(
-        llm,
-        tools=[retriever_tool],
-        checkpointer=memory,
-        prompt=system_prompt
+    # Custom ReAct Agent Implementation
+    
+    # Define the state
+    class AgentState(MessagesState):
+        pass
+
+    # Define the nodes
+    def call_model(state: AgentState):
+        messages = state['messages']
+        # Prepend system prompt to ensure instructions are followed
+        messages_with_prompt = [SystemMessage(content=system_prompt)] + messages
+        response = llm.bind_tools([retriever_tool]).invoke(messages_with_prompt)
+        return {"messages": [response]}
+
+    def should_continue(state: AgentState):
+        messages = state['messages']
+        last_message = messages[-1]
+        if last_message.tool_calls:
+            return "tools"
+        return END
+
+    # Define the graph
+    workflow = StateGraph(AgentState)
+    
+    workflow.add_node("agent", call_model)
+    workflow.add_node("tools", ToolNode([retriever_tool]))
+    
+    workflow.add_edge(START, "agent")
+    
+    workflow.add_conditional_edges(
+        "agent",
+        should_continue,
+        ["tools", END]
     )
+    
+    workflow.add_edge("tools", "agent")
+    
+    # Compile the graph
+    agent = workflow.compile(checkpointer=memory)
     
     return agent
 
@@ -221,7 +258,9 @@ if hasattr(st.session_state, 'example_clicked'):
     
     with st.chat_message("assistant"):
         with st.spinner(t["thinking"]):
-            agent = create_agent(groq_api_key, t["system_prompt"])
+            # Default style for example questions or use a default
+            temperature = 0.5
+            agent = create_agent(groq_api_key, t["system_prompt"], temperature)
             if agent:
                 try:
                     config = {"configurable": {"thread_id": st.session_state.thread_id}}
@@ -243,11 +282,104 @@ if hasattr(st.session_state, 'example_clicked'):
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+        content = message["content"]
+        if "<thinking>" in content and "</thinking>" in content:
+            try:
+                start_tag = "<thinking>"
+                end_tag = "</thinking>"
+                start_index = content.find(start_tag) + len(start_tag)
+                end_index = content.find(end_tag)
+                
+                thinking_content = content[start_index:end_index].strip()
+                final_answer = content[end_index + len(end_tag):].strip()
+                
+                with st.expander(f"🧠 {t['thinking_process']}"):
+                    st.markdown(thinking_content)
+                st.markdown(final_answer)
+            except:
+                st.markdown(content)
+        else:
+            st.markdown(content)
 
 if len(st.session_state.messages) == 0:
     st.info(t["welcome"])
     st.success(t["memory_info"])
+
+# Style Selection (Popover above chat input)
+style_options = {
+    "concise": t.get("style_concise", "Concise"),
+    "normal": t.get("style_normal", "Normal"),
+    "creative": t.get("style_creative", "Creative"),
+    "custom": t.get("style_custom", "Custom")
+}
+
+@st.dialog(t["custom_style_title"])
+def configure_custom_style():
+    st.write(t["custom_style_title"])
+    
+    # Initialize session state for custom style if not exists
+    if "custom_style_config" not in st.session_state:
+        st.session_state.custom_style_config = {
+            "name": "My Custom Coach",
+            "prompt": "You are a helpful coach.",
+            "temperature": 0.7
+        }
+    
+    name = st.text_input(t["custom_style_name"], value=st.session_state.custom_style_config["name"])
+    prompt = st.text_area(t["custom_style_prompt"], value=st.session_state.custom_style_config["prompt"])
+    temperature = st.slider(t["custom_style_temp"], 0.0, 2.0, st.session_state.custom_style_config["temperature"])
+    
+    if st.button(t["save"]):
+        st.session_state.custom_style_config = {
+            "name": name,
+            "prompt": prompt,
+            "temperature": temperature
+        }
+        st.rerun()
+
+# Create a container for the style selector to keep it close to the input
+with st.container():
+    # Initialize style selection if not present
+    if "style_select_main" not in st.session_state:
+        st.session_state.style_select_main = "normal"
+        
+    # Get current label for the popover button
+    current_style_key = st.session_state.style_select_main
+    # Handle potential key error if state has invalid value
+    if current_style_key not in style_options:
+        current_style_key = "normal"
+    
+    # If custom style is selected, use its name as label if available
+    if current_style_key == "custom" and "custom_style_config" in st.session_state:
+        popover_label = st.session_state.custom_style_config["name"]
+    else:
+        popover_label = style_options[current_style_key]
+
+    # Use columns to position it to the right, similar to the screenshot
+    # [Spacer, Thinking Toggle, Style Selector]
+    col1, col2, col3 = st.columns([5, 1, 1])
+    
+    with col2:
+        st.toggle("🧠", key="thinking_mode", help="Thinking Mode / Düşünme Modu")
+
+    with col3:
+        # Using a popover with the current selection as label
+        with st.popover(popover_label, use_container_width=True):
+            selected = st.radio(
+                t.get("style_label", "Style"),
+                options=list(style_options.keys()),
+                format_func=lambda x: style_options[x],
+                key="style_select_main",
+                label_visibility="collapsed"
+            )
+            
+            if selected == "custom":
+                if st.button(t["edit_custom_style"]):
+                    configure_custom_style()
+
+    # Trigger dialog if custom is selected but not configured (first time)
+    if st.session_state.style_select_main == "custom" and "custom_style_config" not in st.session_state:
+        configure_custom_style()
 
 if prompt := st.chat_input(t["chat_placeholder"]):
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -256,16 +388,136 @@ if prompt := st.chat_input(t["chat_placeholder"]):
     
     with st.chat_message("assistant"):
         with st.spinner(t["thinking"]):
-            agent = create_agent(groq_api_key, t["system_prompt"])
+            # Determine style parameters
+            temperature = 0.5
+            style_prompt = ""
+            
+            # Re-fetch selected style key because it might have changed
+            selected_style_key = st.session_state.get("style_select_main", "normal")
+            is_thinking_mode = st.session_state.get("thinking_mode", False)
+            
+            # Language-specific prompts
+            if st.session_state.language == "tr":
+                if selected_style_key == "concise":
+                    temperature = 0.3
+                    style_prompt = "\n\nEK TALİMAT: Cevabını kısa, öz ve doğrudan tut. Maksimum 100 kelime."
+                elif selected_style_key == "creative":
+                    temperature = 1.0
+                    style_prompt = "\n\nEK TALİMAT: Cevabında yaratıcı, hayal gücü yüksek ve ilgi çekici ol. Maksimum 250 kelime."
+                elif selected_style_key == "custom":
+                    if "custom_style_config" in st.session_state:
+                        config = st.session_state.custom_style_config
+                        temperature = config["temperature"]
+                        style_prompt = f"\n\nEK TALİMAT: {config['prompt']}"
+                    else:
+                        # Fallback if config missing
+                        temperature = 0.7
+                        style_prompt = ""
+                else: # Normal
+                    style_prompt = "\n\nEK TALİMAT: Cevabını dengeli tut. Maksimum 180 kelime."
+                
+                if is_thinking_mode:
+                    style_prompt += "\n\nKRİTİK: 'Düşünme Modu'ndasın. Mantık yürütme sürecini açıkça göstermelisin. \n\nCEVABINI TAM OLARAK ŞU FORMATTA VER:\n<thinking>\n[Buraya adım adım düşünme sürecini yaz. Problemi parçalara ayır, farklı açıları değerlendir ve varsayımlarını doğrula.]\n</thinking>\n[Nihai cevabın buraya.]\n\nHATIRLATMA: <thinking> etiketlerini ASLA atlama. Cevap vermeden önce mutlaka düşün."
+            else: # English
+                if selected_style_key == "concise":
+                    temperature = 0.3
+                    style_prompt = "\n\nEXTRA INSTRUCTION: Keep your response short, concise and to the point. Maximum 100 words."
+                elif selected_style_key == "creative":
+                    temperature = 1.0
+                    style_prompt = "\n\nEXTRA INSTRUCTION: Be creative, imaginative and engaging in your response. Maximum 250 words."
+                elif selected_style_key == "custom":
+                    if "custom_style_config" in st.session_state:
+                        config = st.session_state.custom_style_config
+                        temperature = config["temperature"]
+                        style_prompt = f"\n\nEXTRA INSTRUCTION: {config['prompt']}"
+                    else:
+                        # Fallback if config missing
+                        temperature = 0.7
+                        style_prompt = ""
+                else: # Normal
+                    style_prompt = "\n\nEXTRA INSTRUCTION: Keep your response balanced. Maximum 180 words."
+                
+                if is_thinking_mode:
+                    style_prompt += "\n\nCRITICAL: You are in 'Thinking Mode'. You MUST explicitly show your reasoning process. \n\nFORMAT YOUR RESPONSE EXACTLY LIKE THIS:\n<thinking>\n[Your step-by-step reasoning goes here. Break down the problem, consider multiple angles, and verify your assumptions.]\n</thinking>\n[Your final answer goes here.]\n\nREMINDER: NEVER skip the <thinking> tags. Always think before answering."
+            
+            if is_thinking_mode:
+                temperature = 0.2 # Force low temp for reasoning
+
+            final_system_prompt = t["system_prompt"] + style_prompt
+            
+            agent = create_agent(groq_api_key, final_system_prompt, temperature)
             if agent:
                 try:
                     config = {"configurable": {"thread_id": st.session_state.thread_id}}
-                    result = agent.invoke(
-                        {"messages": [HumanMessage(content=prompt)]},
-                        config
-                    )
-                    response = result["messages"][-1].content
-                    st.markdown(response)
+                    
+                    if is_thinking_mode:
+                        with st.status(t["thinking_process_streaming"], expanded=True) as status:
+                            response_placeholder = st.empty()
+                            full_response = ""
+                            raw_response = ""
+                            
+                            # Stream the events from the graph
+                            events = agent.stream(
+                                {"messages": [HumanMessage(content=prompt)]},
+                                config,
+                                stream_mode="values"
+                            )
+                            
+                            for event in events:
+                                if "messages" in event:
+                                    last_msg = event["messages"][-1]
+                                    if isinstance(last_msg, AIMessage):
+                                        content = last_msg.content
+                                        
+                                        # Handle tool calls
+                                        if last_msg.tool_calls:
+                                            for tool_call in last_msg.tool_calls:
+                                                status.write(t["consulting_tool"].format(tool_name=tool_call['name']))
+                                                status.update(label=t["consulting_tool_status"].format(tool_name=tool_call['name']), state="running")
+                                        
+                                        # Handle structured thinking content
+                                        if "<thinking>" in content and "</thinking>" in content:
+                                            # Extract thinking part
+                                            start_tag = "<thinking>"
+                                            end_tag = "</thinking>"
+                                            start_index = content.find(start_tag) + len(start_tag)
+                                            end_index = content.find(end_tag)
+                                            
+                                            thinking_content = content[start_index:end_index].strip()
+                                            final_answer = content[end_index + len(end_tag):].strip()
+                                            
+                                            # Update status with the reasoning
+                                            status.write(thinking_content)
+                                            full_response = final_answer
+                                        elif "<thinking>" in content:
+                                            # Partial thinking content (streaming)
+                                            status.write(t["reasoning_streaming"])
+                                            full_response = content # Fallback
+                                        else:
+                                            # No tags found yet or normal response
+                                            full_response = content
+                                        
+                                        # Keep track of the raw content for saving
+                                        raw_response = content
+                                            
+                            status.update(label=t["thinking_complete"], state="complete", expanded=False)
+                            
+                            # Fallback if response is empty
+                            if not raw_response:
+                                full_response = t.get("error_no_response", "⚠️ Bir hata oluştu, cevap üretilemedi.")
+                                raw_response = full_response
+                                
+                            st.markdown(full_response)
+                            response = raw_response
+                    else:
+                        # Standard invoke
+                        result = agent.invoke(
+                            {"messages": [HumanMessage(content=prompt)]},
+                            config
+                        )
+                        response = result["messages"][-1].content
+                        st.markdown(response)
+                        
                 except Exception as e:
                     response = f"❌ {st.session_state.language.upper()}: {str(e)}"
                     st.error(response)
