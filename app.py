@@ -303,7 +303,6 @@ for message in st.session_state.messages:
 
 if len(st.session_state.messages) == 0:
     st.info(t["welcome"])
-    st.success(t["memory_info"])
 
 # Style Selection (Popover above chat input)
 style_options = {
