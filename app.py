@@ -309,33 +309,56 @@ if len(st.session_state.messages) == 0:
 style_options = {
     "concise": t.get("style_concise", "Concise"),
     "normal": t.get("style_normal", "Normal"),
-    "creative": t.get("style_creative", "Creative"),
-    "custom": t.get("style_custom", "Custom")
+    "creative": t.get("style_creative", "Creative")
 }
 
+# Add custom styles to options
+if "custom_styles" not in st.session_state:
+    st.session_state.custom_styles = {}
+
+for style_id, style_data in st.session_state.custom_styles.items():
+    style_options[style_id] = f"✨ {style_data['name']}"
+
 @st.dialog(t["custom_style_title"])
-def configure_custom_style():
+def configure_custom_style(style_id=None):
     st.write(t["custom_style_title"])
     
-    # Initialize session state for custom style if not exists
-    if "custom_style_config" not in st.session_state:
-        st.session_state.custom_style_config = {
-            "name": "My Custom Coach",
-            "prompt": "You are a helpful coach.",
-            "temperature": 0.7
-        }
+    # Initialize defaults
+    default_name = "My Custom Coach"
+    default_prompt = "You are a helpful coach."
+    default_temp = 0.7
     
-    name = st.text_input(t["custom_style_name"], value=st.session_state.custom_style_config["name"])
-    prompt = st.text_area(t["custom_style_prompt"], value=st.session_state.custom_style_config["prompt"])
-    temperature = st.slider(t["custom_style_temp"], 0.0, 2.0, st.session_state.custom_style_config["temperature"])
+    if style_id and style_id in st.session_state.custom_styles:
+        data = st.session_state.custom_styles[style_id]
+        default_name = data["name"]
+        default_prompt = data["prompt"]
+        default_temp = data["temperature"]
     
-    if st.button(t["save"]):
-        st.session_state.custom_style_config = {
-            "name": name,
-            "prompt": prompt,
-            "temperature": temperature
-        }
-        st.rerun()
+    name = st.text_input(t["custom_style_name"], value=default_name)
+    prompt = st.text_area(t["custom_style_prompt"], value=default_prompt)
+    temperature = st.slider(t["custom_style_temp"], 0.0, 2.0, default_temp)
+    
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        if st.button(t["save"], use_container_width=True):
+            import uuid
+            new_id = style_id if style_id else str(uuid.uuid4())
+            
+            st.session_state.custom_styles[new_id] = {
+                "name": name,
+                "prompt": prompt,
+                "temperature": temperature
+            }
+            st.session_state.style_select_main = new_id
+            st.success(t["style_saved"])
+            st.rerun()
+            
+    with col2:
+        if style_id and st.button(t["delete_style"], use_container_width=True):
+            del st.session_state.custom_styles[style_id]
+            st.session_state.style_select_main = "normal"
+            st.rerun()
 
 # Create a container for the style selector to keep it close to the input
 with st.container():
@@ -345,15 +368,13 @@ with st.container():
         
     # Get current label for the popover button
     current_style_key = st.session_state.style_select_main
-    # Handle potential key error if state has invalid value
+    
+    # Handle potential key error if state has invalid value (e.g. deleted style)
     if current_style_key not in style_options:
         current_style_key = "normal"
+        st.session_state.style_select_main = "normal"
     
-    # If custom style is selected, use its name as label if available
-    if current_style_key == "custom" and "custom_style_config" in st.session_state:
-        popover_label = st.session_state.custom_style_config["name"]
-    else:
-        popover_label = style_options[current_style_key]
+    popover_label = style_options[current_style_key]
 
     # Use columns to position it to the right, similar to the screenshot
     # [Spacer, Thinking Toggle, Style Selector]
@@ -373,13 +394,14 @@ with st.container():
                 label_visibility="collapsed"
             )
             
-            if selected == "custom":
-                if st.button(t["edit_custom_style"]):
-                    configure_custom_style()
-
-    # Trigger dialog if custom is selected but not configured (first time)
-    if st.session_state.style_select_main == "custom" and "custom_style_config" not in st.session_state:
-        configure_custom_style()
+            st.markdown("---")
+            
+            if st.button(t["add_custom_style"], use_container_width=True):
+                configure_custom_style()
+                
+            if selected in st.session_state.custom_styles:
+                if st.button(t["edit_custom_style"], use_container_width=True):
+                    configure_custom_style(selected)
 
 if prompt := st.chat_input(t["chat_placeholder"]):
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -404,15 +426,10 @@ if prompt := st.chat_input(t["chat_placeholder"]):
                 elif selected_style_key == "creative":
                     temperature = 1.0
                     style_prompt = "\n\nEK TALİMAT: Cevabında yaratıcı, hayal gücü yüksek ve ilgi çekici ol. Maksimum 250 kelime."
-                elif selected_style_key == "custom":
-                    if "custom_style_config" in st.session_state:
-                        config = st.session_state.custom_style_config
-                        temperature = config["temperature"]
-                        style_prompt = f"\n\nEK TALİMAT: {config['prompt']}"
-                    else:
-                        # Fallback if config missing
-                        temperature = 0.7
-                        style_prompt = ""
+                elif selected_style_key in st.session_state.custom_styles:
+                    config = st.session_state.custom_styles[selected_style_key]
+                    temperature = config["temperature"]
+                    style_prompt = f"\n\nEK TALİMAT: {config['prompt']}"
                 else: # Normal
                     style_prompt = "\n\nEK TALİMAT: Cevabını dengeli tut. Maksimum 180 kelime."
                 
@@ -425,15 +442,10 @@ if prompt := st.chat_input(t["chat_placeholder"]):
                 elif selected_style_key == "creative":
                     temperature = 1.0
                     style_prompt = "\n\nEXTRA INSTRUCTION: Be creative, imaginative and engaging in your response. Maximum 250 words."
-                elif selected_style_key == "custom":
-                    if "custom_style_config" in st.session_state:
-                        config = st.session_state.custom_style_config
-                        temperature = config["temperature"]
-                        style_prompt = f"\n\nEXTRA INSTRUCTION: {config['prompt']}"
-                    else:
-                        # Fallback if config missing
-                        temperature = 0.7
-                        style_prompt = ""
+                elif selected_style_key in st.session_state.custom_styles:
+                    config = st.session_state.custom_styles[selected_style_key]
+                    temperature = config["temperature"]
+                    style_prompt = f"\n\nEXTRA INSTRUCTION: {config['prompt']}"
                 else: # Normal
                     style_prompt = "\n\nEXTRA INSTRUCTION: Keep your response balanced. Maximum 180 words."
                 
