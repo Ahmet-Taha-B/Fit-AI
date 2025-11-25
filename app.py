@@ -323,8 +323,8 @@ def configure_custom_style(style_id=None):
     st.write(t["custom_style_title"])
     
     # Initialize defaults
-    default_name = "My Custom Coach"
-    default_prompt = "You are a helpful coach."
+    default_name = t.get("default_custom_name", "My Custom Coach")
+    default_prompt = t.get("default_custom_prompt", "You are a helpful coach.")
     default_temp = 0.7
     
     if style_id and style_id in st.session_state.custom_styles:
